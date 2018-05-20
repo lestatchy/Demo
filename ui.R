@@ -10,7 +10,7 @@
 library(shiny)
 
 
-shinyUI(navbarPage(title = "App Title",
+shinyUI(navbarPage(title = "DEMO",
            tabPanel("Plot",
                     fluidPage(
                     sidebarLayout(
@@ -21,7 +21,7 @@ shinyUI(navbarPage(title = "App Title",
                                     max = 50,
                                     value = 30),
                         dateRangeInput(inputId = "dateRange",
-                                    label = "Strategy duration",
+                                    label = "Strategy duration:",
                                     start = '2009-01-06',
                                     end = '2017-06-25',
                                     min = '2009-01-06',
@@ -36,6 +36,39 @@ shinyUI(navbarPage(title = "App Title",
                       )
                     )
                     )),
-           tabPanel("Summary"),
+           tabPanel("Bootstrapped Data",
+                    fluidPage(
+                      sidebarLayout(
+                        sidebarPanel(
+                          sliderInput(inputId = "nweeks",
+                                      label = "Investment horizon(weeks):",
+                                      min = 52,
+                                      max = 408,
+                                      value = c(60, 400))
+                        ),
+                        
+                        # Show a plot of the generated distribution
+                        mainPanel(
+                          plotOutput("hist2"),
+                          plotOutput("trend")
+                        )
+                      )
+                    )),
+
            tabPanel("Table")
 ))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
