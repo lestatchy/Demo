@@ -53,7 +53,7 @@ shinyUI(navbarPage(title = "DEMO",
                           plotOutput("trend")
                         )
                       )
-                    )),
+                    ))
 ))
 
 
