@@ -88,7 +88,7 @@ shinyServer(function(input, output) {
     colnames(BootstrapData)[3] = "weeks"
     BootstrapData = BootstrapData[BootstrapData$weeks>=t1 & BootstrapData$weeks<=t2, ]
     ggplot(BootstrapData, aes(x=gain)) +
-      geom_histogram(aes(y=..density..), colour="black", fill="white",bins=20) +
+      geom_histogram(aes(y=..density..), colour="black", fill="white",bins=40) +
       xlab("Distribution of Weekly Gain") +
       geom_vline(aes(xintercept=mean(gain, na.rm=T)),   # Ignore NA values for mean
                  color="red", linetype="dashed", size=1)+
