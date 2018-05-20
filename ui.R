@@ -54,8 +54,6 @@ shinyUI(navbarPage(title = "DEMO",
                         )
                       )
                     )),
-
-           tabPanel("Table")
 ))
 
 
