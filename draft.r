@@ -19,26 +19,28 @@ for (i in 1:(L-52)) {
 colnames(BootstrapData) = c('start','end','# of weeks','gain')
 BootstrapData = BootstrapData[-1,]
 saveRDS(BootstrapData,file = 'BootstrapData.rds')
-NoWeek = unique(BootstrapData$`# of weeks`)
+BootstrapData = readRDS("BootstrapData.rds")
+# NoWeek = unique(BootstrapData$`# of weeks`)
 
 
 library(data.table)
-
+library(plyr)
 DT <- data.table(BootstrapData)
 colnames(DT)[3] = "weeks"
-a = count(DT,"weeks")
+a = rev(count(DT,"weeks"))
+
 x1 = DT[, mean(gain), by = weeks]
 x2 = DT[, sd(gain), by = weeks]
 # 
 # x3 = DT[, quantile(gain,probs = seq(0, 1, 0.05))[2], by = `# of weeks`]
 # x4 = DT[, quantile(gain,probs = seq(0, 1, 0.05))[20], by = `# of weeks`]
-Lo = x1$V1-3*x2$V1/sqrt(a)
-Hi = x1$V1+3*x2$V1/sqrt(a)
+Lo = x1$V1-3*x2$V1
+Hi = x1$V1+3*x2$V1
 # `5%` = x3$V1
 # `95%` = x4$V1
 
-Dat1 = cbind(x1,Lo$freq)
-Dat1 = cbind(Dat1,Hi$freq)
+Dat1 = cbind(x1,Lo)
+Dat1 = cbind(Dat1,Hi)
 # Dat1 = cbind(x1,`5%`)
 # Dat1 = cbind(Dat1,`95%`)
 colnames(Dat1)[2:4] = c("mean","low","high")

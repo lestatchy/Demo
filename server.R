@@ -98,8 +98,8 @@ shinyServer(function(input, output) {
   output$trend <- renderPlot({
     Dat1 = readRDS("trendData.rds")
     Dat1 = Dat1[Dat1$weeks>=input$nweeks[1] & Dat1$weeks<=input$nweeks[2],]
-    ggplot(data=Dat1, aes(x=weeks, y=mean, ymin=low, ymax=high, fill='blue'))+ 
-      geom_line() + geom_ribbon(alpha=.5)
+    ggplot(data=Dat1, aes(x=weeks, y=mean, ymin=low, ymax=high,fill = 'blue'))+ 
+      geom_line() + geom_ribbon(alpha=.5) + theme(legend.position="none")
   })
   
 })
