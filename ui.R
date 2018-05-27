@@ -38,6 +38,7 @@ shinyUI(navbarPage(title = "DEMO",
                     )),
            tabPanel("Bootstrapped Data",
                     fluidPage(
+                      includeMarkdown("Description.Rmd")
                       sidebarLayout(
                         sidebarPanel(
                           sliderInput(inputId = "nweeks",
