@@ -13,8 +13,8 @@ library(shiny)
 shinyUI(navbarPage(title = "DEMO",
            tabPanel("Plot",
                     fluidPage(
-                    sidebarLayout(
-                      sidebarPanel(
+                    verticalLayout(
+                      wellPanel(
                         sliderInput(inputId = "bins",
                                     label = "Number of bins:",
                                     min = 10,
@@ -30,15 +30,15 @@ shinyUI(navbarPage(title = "DEMO",
                       ),
                       
                       # Show a plot of the generated distribution
-                      mainPanel(
+                      # mainPanel(
                         plotOutput("hist"),
                         plotOutput("totalReturn")
-                      )
+                      # )
                     )
                     )),
            tabPanel("Bootstrapped Data",
                     fluidPage(
-                      includeMarkdown("Description.Rmd")
+                      # uiOutput('markdown'),
                       sidebarLayout(
                         sidebarPanel(
                           sliderInput(inputId = "nweeks",
@@ -54,7 +54,21 @@ shinyUI(navbarPage(title = "DEMO",
                           plotOutput("trend")
                         )
                       )
+                    )),
+           tabPanel("Description",
+                    fluidPage(
+                      sidebarLayout(
+                        sidebarPanel(
+                          uiOutput('markdown')
+                        ),
+                        mainPanel(imageOutput("flowchart"))
+                      )
+
                     ))
+           # tabPanel("Spreadsheets",
+           #          fluidPage(
+           #            dataTableOutput('table')
+           #          ))
 ))
 
 

@@ -20,6 +20,7 @@ colnames(BootstrapData) = c('start','end','# of weeks','gain')
 BootstrapData = BootstrapData[-1,]
 saveRDS(BootstrapData,file = 'BootstrapData.rds')
 BootstrapData = readRDS("BootstrapData.rds")
+BootstrapData$gain = BootstrapData$gain*5200
 # NoWeek = unique(BootstrapData$`# of weeks`)
 
 

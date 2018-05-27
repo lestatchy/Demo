@@ -10,6 +10,7 @@
 
 
 library(shiny)
+library(knitr)
 library(ggplot2)
 library(moments)
 library(data.table)
@@ -46,23 +47,24 @@ shinyServer(function(input, output) {
   # dat <- callModule(Gains,"id",reactive(min(input$dateRange)),reactive(max(input$dateRange)))
   dataTable <- reactive(
     data.frame(Days = difftime(input$dateRange[2],input$dateRange[1]),
-               Mean = mean(Gains(input$dateRange[1],input$dateRange[2])$Gain),
-               Median = median(Gains(input$dateRange[1],input$dateRange[2])$Gain),
+               "Annualized Mean(%)" = mean(Gains(input$dateRange[1],input$dateRange[2])$Gain),
+               "Annualized Median(%)" = median(Gains(input$dateRange[1],input$dateRange[2])$Gain),
                Skewness = skewness(Gains(input$dateRange[1],input$dateRange[2])$Gain), 
-               Kurtosis = kurtosis(Gains(input$dateRange[1],input$dateRange[2])$Gain)
+               Kurtosis = kurtosis(Gains(input$dateRange[1],input$dateRange[2])$Gain),check.names = F
   ))
   
+  # data <- read_xls("UST10y_update2.xlsx",sheet = "Cash")
 
   output$hist <- renderPlot({
     # generate bins based on input$bins from ui.R
     # draw the histogram with the specified number of bins
     ggplot(dat(), aes(x=Gain)) +
-      geom_histogram(aes(y=..density..), colour="black", fill="white",bins=input$bins) + 
-      xlab("Distribution of Weekly Gain")+
-      scale_x_continuous(breaks=seq(round(min(Strgy$Gain),2),
-                                    round(max(Strgy$Gain),2),
-                                    by=round((max(Strgy$Gain)-min(Strgy$Gain))/5,2)
-      )) +
+      geom_histogram( colour="black", fill="white",bins=input$bins) + 
+      xlab("Distribution of strategy weekly annualized returns(%)")+
+      # scale_x_continuous(breaks=seq(round(min(Strgy$Gain),2),
+      #                               round(max(Strgy$Gain),2),
+      #                               by=round((max(Strgy$Gain)-min(Strgy$Gain))/5,2)
+      # )) +
       geom_vline(aes(xintercept=mean(Gain, na.rm=T)),   # Ignore NA values for mean
                  color="red", linetype="dashed", size=1)+
       geom_density(alpha=.2, fill="#FF6666")
@@ -88,8 +90,8 @@ shinyServer(function(input, output) {
     colnames(BootstrapData)[3] = "weeks"
     BootstrapData = BootstrapData[BootstrapData$weeks>=t1 & BootstrapData$weeks<=t2, ]
     ggplot(BootstrapData, aes(x=gain)) +
-      geom_histogram(aes(y=..density..), colour="black", fill="white",bins=40) +
-      xlab("Distribution of Weekly Gain") +
+      geom_histogram(colour="black", fill="white",bins=40) +
+      xlab("Distribution of strategy weekly annualized returns(%)") +
       geom_vline(aes(xintercept=mean(gain, na.rm=T)),   # Ignore NA values for mean
                  color="red", linetype="dashed", size=1)+
       geom_density(alpha=.2, fill="#FF6666")
@@ -98,10 +100,32 @@ shinyServer(function(input, output) {
   output$trend <- renderPlot({
     Dat1 = readRDS("trendData.rds")
     Dat1 = Dat1[Dat1$weeks>=input$nweeks[1] & Dat1$weeks<=input$nweeks[2],]
+    Dat1$mean = Dat1$mean*5200
+    Dat1$low = Dat1$low*5200
+    Dat1$high = Dat1$high*5200
     ggplot(data=Dat1, aes(x=weeks, y=mean, ymin=low, ymax=high,fill = 'blue'))+ 
       geom_line() + geom_ribbon(alpha=.5) + theme(legend.position="none") +
-      xlab("Investment horizons (weeks)") +
-      ylab("expected weekly returns (un-annulized)")
+      xlab("Different investment horizons (weeks)") +
+      ylab("expected annulized weekly returns(%)")
   })
+  
+  output$markdown <- renderUI({
+    HTML(markdown::markdownToHTML(knit('Description.rmd')))
+  })
+
+  # output$table <- renderDataTable({
+  #   dataTable
+  # })
+  
+  output$flowchart <- renderImage({
+    
+      return(list(
+        src = "Trading Strategy.png",
+        filetype = "image/png",
+        alt = "This is a chainring"
+      ))
+    
+    
+  }, deleteFile = FALSE)
   
 })

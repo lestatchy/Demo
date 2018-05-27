@@ -1,0 +1,12 @@
+name: Demo
+title: Demo
+username:
+account: heyang
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 346190
+bundleId: 1384083
+url: https://heyang.shinyapps.io/Demo/
+when: 1526880210.78352
+asMultiple: FALSE
+asStatic: FALSE

@@ -51,7 +51,7 @@ Gains <- function(start,end){
     gain = -pos*OutSample$Libor[i]/10000+pos*(OutSample$Swap[i+1]/OutSample$Swap[i]-1)
     totalRet = Strgy$TR[i]*(1+gain)
     Strgy$Position[i+1] = pos
-    Strgy$Gain[i+1] = gain
+    Strgy$Gain[i+1] = gain*52*100
     Strgy$TR[i+1] = totalRet
   }
   return(Strgy)
