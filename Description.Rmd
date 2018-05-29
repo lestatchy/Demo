@@ -1,9 +1,14 @@
 ---
-output: html_document
+output: 
+  html_document:
+    theme: united
+    highlight: tango
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+
 ```
 
 ## Strategy Description:

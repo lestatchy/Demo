@@ -12,8 +12,10 @@
 library(shiny)
 library(knitr)
 library(ggplot2)
+library(plotly)
 library(moments)
 library(data.table)
+library(gridExtra)
 source("Demo.R")
 
 # Gains <- function(input, output, session,start,end){
@@ -49,6 +51,8 @@ shinyServer(function(input, output) {
     data.frame(Days = difftime(input$dateRange[2],input$dateRange[1]),
                "Annualized Mean(%)" = mean(Gains(input$dateRange[1],input$dateRange[2])$Gain),
                "Annualized Median(%)" = median(Gains(input$dateRange[1],input$dateRange[2])$Gain),
+               "Annualized StdDev(%)" = sd(Gains(input$dateRange[1],input$dateRange[2])$Gain)/sqrt(52),
+               "Annualized Sharpe" = mean(Gains(input$dateRange[1],input$dateRange[2])$Gain)*sqrt(52)/sd(Gains(input$dateRange[1],input$dateRange[2])$Gain),
                Skewness = skewness(Gains(input$dateRange[1],input$dateRange[2])$Gain), 
                Kurtosis = kurtosis(Gains(input$dateRange[1],input$dateRange[2])$Gain),check.names = F
   ))
@@ -66,8 +70,7 @@ shinyServer(function(input, output) {
       #                               by=round((max(Strgy$Gain)-min(Strgy$Gain))/5,2)
       # )) +
       geom_vline(aes(xintercept=mean(Gain, na.rm=T)),   # Ignore NA values for mean
-                 color="red", linetype="dashed", size=1)+
-      geom_density(alpha=.2, fill="#FF6666")
+                 color="red", linetype="dashed", size=1)
     
     
   })
@@ -75,12 +78,13 @@ shinyServer(function(input, output) {
     print(dataTable(),row.names = FALSE,digits = 2)
     })
   
-  output$totalReturn <- renderPlot({
+  output$totalReturn <- renderPlotly({
     x = Strgy[(as.Date(Strgy$Date)>=input$dateRange[1])&(as.Date(Strgy$Date)<=input$dateRange[2]),]
     x$TR = x$TR/x$TR[1]
-    ggplot(data=x, aes(x=Date, y=TR, group=1)) +
+    gg = ggplot(data=x, aes(x=Date, y=TR)) +
       geom_line(color="red")+
       geom_point()
+    ggplotly(gg)
   })
   
   output$hist2 <- renderPlot({
@@ -93,20 +97,23 @@ shinyServer(function(input, output) {
       geom_histogram(colour="black", fill="white",bins=40) +
       xlab("Distribution of strategy weekly annualized returns(%)") +
       geom_vline(aes(xintercept=mean(gain, na.rm=T)),   # Ignore NA values for mean
-                 color="red", linetype="dashed", size=1)+
-      geom_density(alpha=.2, fill="#FF6666")
+                 color="red", linetype="dashed", size=1)
   })
   
-  output$trend <- renderPlot({
+  output$trend <- renderPlotly({
     Dat1 = readRDS("trendData.rds")
     Dat1 = Dat1[Dat1$weeks>=input$nweeks[1] & Dat1$weeks<=input$nweeks[2],]
-    Dat1$mean = Dat1$mean*5200
-    Dat1$low = Dat1$low*5200
-    Dat1$high = Dat1$high*5200
-    ggplot(data=Dat1, aes(x=weeks, y=mean, ymin=low, ymax=high,fill = 'blue'))+ 
+    p1 = ggplot(data=Dat1, aes(x=weeks, y=mean, ymin=low, ymax=high))+ 
       geom_line() + geom_ribbon(alpha=.5) + theme(legend.position="none") +
       xlab("Different investment horizons (weeks)") +
       ylab("expected annulized weekly returns(%)")
+    p2 = ggplot(data = Dat1,aes(x=weeks,y=sharpe)) +
+      geom_line() +
+      xlab("Different investment horizons (weeks)") +
+      ylab("Average Sharpe Ratio")
+    p1 = ggplotly(p1)
+    p2 = ggplotly(p2)
+    subplot(p1, p2)
   })
   
   output$markdown <- renderUI({
@@ -127,5 +134,107 @@ shinyServer(function(input, output) {
     
     
   }, deleteFile = FALSE)
+  
+  output$downloadExcel <-downloadHandler(
+    filename <- function(){
+      paste("Strategy Replication","xlsx",sep=".")
+    },
+    content <- function(file){
+      file.copy("UST10y_update2.xlsx", file)
+    },
+    contentType = "application/xlsx"
+  )
+  
+  output$totalReturn2 <- renderPlotly({
+
+    
+    begin = as.Date(input$Lookback)
+    end = as.Date(input$refDate)
+    testData = Strgy[as.Date(Strgy$Date)>begin & as.Date(Strgy$Date)<end,]
+    maxs = data.frame(Date = testData$Date[1],Max = 0)
+    mins = data.frame(Date = testData$Date[1],Min = 0)
+    testData$TR = testData$TR/testData$TR[1]
+    L = nrow(testData)
+    max = testData$TR[1]
+    min = max
+    for(i in 1:(L-1)){
+      temp = testData$TR[i]
+      forward = testData$TR[i+1]
+      if(temp > forward & temp > max){
+        max = temp
+        newrowmax = data.frame(Date = testData$Date[i],Max = max)
+        maxs = rbind(maxs,newrowmax)
+        min = max
+      }else if(temp < forward & temp < min){
+        min = temp
+        newrowmin = data.frame(Date = testData$Date[i],Min = min)
+        mins = rbind(mins,newrowmin)
+      }
+    }
+    maxs = maxs[-1,]
+    mins = mins[-1,]
+    drawndowns = data.frame(Date = testData$Date[1],TR = 0, DD = 0)
+    LL = nrow(maxs)
+    for(i in 2:LL){
+      t1 = maxs$Date[i-1]
+      t2 = maxs$Date[i]
+      x = testData[testData$Date>t1 & testData$Date<t2,]
+      min = min(x$TR)
+      temp = x[x$TR == min,]
+      newrow = data.frame(Date = temp$Date,TR = temp$TR,DD = (min-maxs$Max[i])/maxs$Max[i])
+      drawndowns = rbind(drawndowns,newrow)
+    }
+    drawndowns = drawndowns[-1,]
+    
+    
+    p = ggplot(data=testData, aes(x=Date, y=TR)) +
+      geom_line(color="black")+
+      geom_point(data=maxs, aes(y=Max), colour="green", size=2)+
+      geom_point(data=drawndowns, colour="red", size=2)
+    ggplotly(p)
+  })
+  output$hist3 <- renderPlot({
+    begin = as.Date(input$Lookback)
+    end = as.Date(input$refDate)
+    testData = Strgy[as.Date(Strgy$Date)>begin & as.Date(Strgy$Date)<end,]
+    ggplot(data = testData, aes(x=Gain))+
+      geom_histogram(colour="black", fill="white", binwidth = 0.002)+
+      geom_density(colours="orange",fill="orange",alpha=0.2)+
+      geom_vline(aes(xintercept=mean(Gain, na.rm=T)),   # Ignore NA values for mean
+                 color="red", linetype="dashed", size=1)
+  })
+  output$hist4 <- renderPlotly({
+    begin = as.Date(input$Lookback)
+    end = as.Date(input$refDate)
+    testData = Strgy[as.Date(Strgy$Date)>begin & as.Date(Strgy$Date)<end,]
+    maxs = data.frame(Date = testData$Date[1],Max = 0)
+    testData$TR = testData$TR/testData$TR[1]
+    L = nrow(testData)
+    max = testData$TR[1]
+    for(i in 1:(L-1)){
+      temp = testData$TR[i]
+      forward = testData$TR[i+1]
+      if(temp > forward & temp > max){
+        max = temp
+        newrowmax = data.frame(Date = testData$Date[i],Max = max)
+        maxs = rbind(maxs,newrowmax)
+      }
+    }
+    maxs = maxs[-1,]
+    drawndowns = data.frame(Date = testData$Date[1],TR = 0, DD = 0)
+    LL = nrow(maxs)
+    for(i in 2:LL){
+      t1 = maxs$Date[i-1]
+      t2 = maxs$Date[i]
+      x = testData[testData$Date>t1 & testData$Date<t2,]
+      min = min(x$TR)
+      temp = x[x$TR == min,]
+      newrow = data.frame(Date = temp$Date,TR = temp$TR,DD = (min-maxs$Max[i])/maxs$Max[i])
+      drawndowns = rbind(drawndowns,newrow)
+    }
+    drawndowns = drawndowns[-1,]
+    ggplot(data = drawndowns, aes(x=DD))+
+      geom_histogram(colour="black", fill="white", bins = 10)
+  })
   
 })

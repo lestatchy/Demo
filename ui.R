@@ -8,34 +8,80 @@
 #
 
 library(shiny)
+library(plotly)
+
+
 
 
 shinyUI(navbarPage(title = "DEMO",
-           tabPanel("Plot",
+                   tabPanel("Description",
+                            fluidPage(
+                              sidebarLayout(
+                                sidebarPanel(
+                                  # uiOutput('markdown')
+                                  includeHTML("Description.Rhtml")
+                                ),
+                                mainPanel(
+                                  imageOutput("flowchart"),
+                                  downloadButton("downloadExcel", "Download the Dataset")
+                                )
+                              )
+                              
+                            )),
+           tabPanel("Historical Performance",
                     fluidPage(
                     verticalLayout(
                       wellPanel(
-                        sliderInput(inputId = "bins",
-                                    label = "Number of bins:",
-                                    min = 10,
-                                    max = 50,
-                                    value = 30),
                         dateRangeInput(inputId = "dateRange",
                                     label = "Strategy duration:",
                                     start = '2009-01-06',
                                     end = '2017-06-25',
                                     min = '2009-01-06',
                                     max = '2017-07-25'),
-                        verbatimTextOutput("stats")
+                        verbatimTextOutput("stats"),
+                        sliderInput(inputId = "bins",
+                                    label = "Number of bins:",
+                                    min = 10,
+                                    max = 50,
+                                    value = 30)
                       ),
                       
                       # Show a plot of the generated distribution
                       # mainPanel(
                         plotOutput("hist"),
-                        plotOutput("totalReturn")
+                        plotlyOutput("totalReturn")
                       # )
                     )
                     )),
+           
+           tabPanel("Lookback",
+                    fluidPage(
+                      titlePanel("Performance"),
+                      
+                      sidebarLayout(
+                        
+                        sidebarPanel(
+                          dateInput(inputId = "refDate", 
+                                    label = "Reference date", 
+                                    value = "2017-07-01"),
+                          sliderInput(inputId = "Lookback",
+                                      label = "Trade starts from:",
+                                      min = as.Date("2009-01-06"),
+                                      max = as.Date("2017-01-06"),
+                                      value = as.Date("2009-07-25"))
+                        ),
+                      
+                        mainPanel(
+                          tabsetPanel(
+                            tabPanel("Total Return",plotlyOutput("totalReturn2")),
+                            tabPanel("Distribution",plotOutput("hist3")),
+                            tabPanel("Drawdowns",plotOutput("hist4"))
+                          )
+                        )
+                      
+                      )
+                    )),
+        
            tabPanel("Bootstrapped Data",
                     fluidPage(
                       # uiOutput('markdown'),
@@ -51,19 +97,9 @@ shinyUI(navbarPage(title = "DEMO",
                         # Show a plot of the generated distribution
                         mainPanel(
                           plotOutput("hist2"),
-                          plotOutput("trend")
+                          plotlyOutput("trend")
                         )
                       )
-                    )),
-           tabPanel("Description",
-                    fluidPage(
-                      sidebarLayout(
-                        sidebarPanel(
-                          uiOutput('markdown')
-                        ),
-                        mainPanel(imageOutput("flowchart"))
-                      )
-
                     ))
            # tabPanel("Spreadsheets",
            #          fluidPage(
